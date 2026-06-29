@@ -1,21 +1,21 @@
-# BullshitCore
+# BSCore
 
-![Code size](https://img.shields.io/github/languages/code-size/MinersStudios/BullshitCore?style=flat-square)
+![Code size](https://img.shields.io/github/languages/code-size/PackmanDude/BSCore?style=flat-square)
 
-MinersStudios' own Minecraft server implementation.
+My own Minecraft server implementation.
 
 ## Building
 
 Get a copy of the software:
 
 ```sh
-git clone --depth 1 --single-branch https://github.com/MinersStudios/BullshitCore.git
+git clone --depth 1 --single-branch https://github.com/PackmanDude/BSCore.git
 ```
 
 Change the working directory:
 
 ```sh
-cd BullshitCore
+cd BSCore
 ```
 
 Run the build script:

@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include "log.h"
 
-#define MESSAGE "Hello, p0loskun!"
+#define MESSAGE "Test."
 
 static void
 variadic_wrapper(va_list * restrict variadic_arguments, ...)
@@ -21,43 +21,43 @@ main(void)
 	assert(!pipe(pipe_ends));
 	FILE * const logged_message = fdopen(*pipe_ends, "r");
 	assert(logged_message);
-#ifdef BULLSHITCORE_LOG_LOG
+#ifdef BSCORE_LOG_LOG
 	assert(dup2(pipe_ends[1], STDOUT_FILENO) != -1);
-	bullshitcore_log_log(MESSAGE);
+	bscore_log_log(MESSAGE);
 	assert(!errno);
 	assert(!fflush(stdout));
 #endif
-#ifdef BULLSHITCORE_LOG_LOG_FORMATTED
+#ifdef BSCORE_LOG_LOG_FORMATTED
 	assert(dup2(pipe_ends[1], STDOUT_FILENO) != -1);
-	bullshitcore_log_log_formatted("%s\n", MESSAGE);
+	bscore_log_log_formatted("%s\n", MESSAGE);
 	assert(!errno);
 	assert(!fflush(stdout));
 #endif
-#ifdef BULLSHITCORE_LOG_VARIADIC_LOG_FORMATTED
+#ifdef BSCORE_LOG_VARIADIC_LOG_FORMATTED
 	va_list variadic_arguments;
 	variadic_wrapper(&variadic_arguments, MESSAGE);
 	assert(dup2(pipe_ends[1], STDOUT_FILENO) != -1);
-	bullshitcore_log_variadic_log_formatted("%s\n", variadic_arguments);
+	bscore_log_variadic_log_formatted("%s\n", variadic_arguments);
 	assert(!errno);
 	assert(!fflush(stdout));
 #endif
-#ifdef BULLSHITCORE_LOG_ERROR
+#ifdef BSCORE_LOG_ERROR
 	assert(dup2(pipe_ends[1], STDERR_FILENO) != -1);
-	bullshitcore_log_error(MESSAGE);
+	bscore_log_error(MESSAGE);
 	assert(!errno);
 	assert(!fflush(stderr));
 #endif
-#ifdef BULLSHITCORE_LOG_ERROR_FORMATTED
+#ifdef BSCORE_LOG_ERROR_FORMATTED
 	assert(dup2(pipe_ends[1], STDERR_FILENO) != -1);
-	bullshitcore_log_error_formatted("%s\n", MESSAGE);
+	bscore_log_error_formatted("%s\n", MESSAGE);
 	assert(!errno);
 	assert(!fflush(stderr));
 #endif
-#ifdef BULLSHITCORE_LOG_VARIADIC_ERROR_FORMATTED
+#ifdef BSCORE_LOG_VARIADIC_ERROR_FORMATTED
 	va_list variadic_arguments;
 	variadic_wrapper(&variadic_arguments, MESSAGE);
 	assert(dup2(pipe_ends[1], STDERR_FILENO) != -1);
-	bullshitcore_log_variadic_error_formatted("%s\n", variadic_arguments);
+	bscore_log_variadic_error_formatted("%s\n", variadic_arguments);
 	assert(!errno);
 	assert(!fflush(stderr));
 #endif

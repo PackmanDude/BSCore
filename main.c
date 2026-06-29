@@ -10,7 +10,6 @@
 #include <sys/socket.h>
 #include <time.h>
 #include <unistd.h>
-// DO NOT MOVE NEXT 3 (THREE) INCLUDE DIRECTIVES AFTER ANY OTHER WOLFSSL HEADER
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/settings.h>
 #include <wolfssl/ssl.h>
@@ -20,11 +19,9 @@
 #include "config.h"
 #include "global-macros.h"
 #include "log.h"
-#include "memory-pool.h"
 #include "network.h"
 #include "registries.h"
 #include "version"
-#include "world.h"
 
 #define ACTUAL_SIMULATION_DISTANCE (RENDER_DISTANCE <= SIMULATION_DISTANCE ? RENDER_DISTANCE : SIMULATION_DISTANCE)
 #define COMPOUND_LITERAL_WITH_SIZE(type, ...) (type){ __VA_ARGS__ }, sizeof(type)
@@ -100,9 +97,9 @@ packet_receiver(void *thread_arguments)
 			bytes_read = recv(client_endpoint, buffer, PACKET_MAXSIZE, 0);
 			if (!bytes_read) goto close_connection;
 			else if (unlikely(bytes_read == -1)) goto clear_stack_receiver;
-			bullshitcore_network_varint_decode(buffer, &packet_next_boundary);
+			bscore_network_varint_decode(buffer, &packet_next_boundary);
 			buffer_offset = packet_next_boundary;
-			packet_identifier = bullshitcore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary);
+			packet_identifier = bscore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary);
 			buffer_offset += packet_next_boundary;
 			switch (*connection_state)
 			{
@@ -110,13 +107,13 @@ packet_receiver(void *thread_arguments)
 				{
 					if (packet_identifier == Packet_Handshaking_Client_Handshake)
 					{
-						const uint32_t client_protocol_version = bullshitcore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary);
+						const uint32_t client_protocol_version = bscore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary);
 						buffer_offset += packet_next_boundary;
 						if (client_protocol_version != PROTOCOL_VERSION)
-							bullshitcore_log_log("Warning! Client and server protocol version mismatch.");
-						const uint32_t server_address_string_length = bullshitcore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary);
+							bscore_log_log("Warning! Client and server protocol version mismatch.");
+						const uint32_t server_address_string_length = bscore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary);
 						buffer_offset += packet_next_boundary;
-						const uint32_t target_state = bullshitcore_network_varint_decode(buffer + buffer_offset + server_address_string_length + 2, &packet_next_boundary);
+						const uint32_t target_state = bscore_network_varint_decode(buffer + buffer_offset + server_address_string_length + 2, &packet_next_boundary);
 						buffer_offset += packet_next_boundary;
 						if (target_state == Connection_State_Status || target_state == Connection_State_Login)
 							*connection_state = target_state;
@@ -133,42 +130,42 @@ packet_receiver(void *thread_arguments)
 							const size_t text_length = strlen((const char *)text);
 							const JSONTextComponent packet_payload =
 							{
-								bullshitcore_network_varint_encode(text_length),
+								bscore_network_varint_encode(text_length),
 								text
 							};
 							if (text_length > JSONTEXTCOMPONENT_MAXSIZE) break;
 							uint8_t packet_payload_length_length;
-							bullshitcore_network_varint_decode(packet_payload.length, &packet_payload_length_length);
-							VarInt * const packet_identifier_varint = bullshitcore_network_varint_encode(Packet_Status_Server_Status_Response);
+							bscore_network_varint_decode(packet_payload.length, &packet_payload_length_length);
+							VarInt * const packet_identifier_varint = bscore_network_varint_encode(Packet_Status_Server_Status_Response);
 							uint8_t packet_identifier_varint_length;
-							bullshitcore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
-							VarInt * const packet_length_varint = bullshitcore_network_varint_encode(packet_identifier_varint_length
+							bscore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
+							VarInt * const packet_length_varint = bscore_network_varint_encode(packet_identifier_varint_length
 								+ packet_payload_length_length
 								+ text_length);
 							uint8_t packet_length_varint_length;
-							bullshitcore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
+							bscore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
 							SEND((uintptr_t)packet_length_varint, packet_length_varint_length,
 								(uintptr_t)packet_identifier_varint, packet_identifier_varint_length,
 								(uintptr_t)packet_payload.length, packet_payload_length_length,
 								(uintptr_t)packet_payload.contents, text_length)
-							bullshitcore_memory_pool_leave(packet_payload.length, packet_payload_length_length);
-							bullshitcore_memory_pool_leave(packet_identifier_varint, packet_identifier_varint_length);
-							bullshitcore_memory_pool_leave(packet_length_varint, packet_length_varint_length);
+							free(packet_payload.length);
+							free(packet_identifier_varint);
+							free(packet_length_varint);
 							break;
 						}
 						case Packet_Status_Client_Ping_Request:
 						{
-							VarInt * const packet_identifier_varint = bullshitcore_network_varint_encode(Packet_Status_Server_Ping_Response);
+							VarInt * const packet_identifier_varint = bscore_network_varint_encode(Packet_Status_Server_Ping_Response);
 							uint8_t packet_identifier_varint_length;
-							bullshitcore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
-							VarInt * const packet_length_varint = bullshitcore_network_varint_encode(packet_identifier_varint_length + 8);
+							bscore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
+							VarInt * const packet_length_varint = bscore_network_varint_encode(packet_identifier_varint_length + 8);
 							uint8_t packet_length_varint_length;
-							bullshitcore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
+							bscore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
 							SEND((uintptr_t)packet_length_varint, packet_length_varint_length,
 								(uintptr_t)packet_identifier_varint, packet_identifier_varint_length,
 								(uintptr_t)buffer, 8)
-							bullshitcore_memory_pool_leave(packet_identifier_varint, packet_identifier_varint_length);
-							bullshitcore_memory_pool_leave(packet_length_varint, packet_length_varint_length);
+							free(packet_identifier_varint);
+							free(packet_length_varint);
 							goto close_connection;
 							break;
 						}
@@ -182,28 +179,28 @@ packet_receiver(void *thread_arguments)
 						case Packet_Login_Client_Login_Start:
 						{
 							uint8_t username_length_length;
-							const uint32_t username_length = bullshitcore_network_varint_decode(buffer + buffer_offset, &username_length_length);
+							const uint32_t username_length = bscore_network_varint_decode(buffer + buffer_offset, &username_length_length);
 							buffer_offset += username_length_length + username_length;
-							VarInt * const packet_identifier_varint = bullshitcore_network_varint_encode(Packet_Login_Server_Login_Success);
+							VarInt * const packet_identifier_varint = bscore_network_varint_encode(Packet_Login_Server_Login_Success);
 							uint8_t packet_identifier_varint_length;
-							bullshitcore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
-							VarInt * const properties_count_varint = bullshitcore_network_varint_encode(0);
+							bscore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
+							VarInt * const properties_count_varint = bscore_network_varint_encode(0);
 							uint8_t properties_count_varint_length;
-							bullshitcore_network_varint_decode(properties_count_varint, &properties_count_varint_length);
-							VarInt * const packet_length_varint = bullshitcore_network_varint_encode(packet_identifier_varint_length
+							bscore_network_varint_decode(properties_count_varint, &properties_count_varint_length);
+							VarInt * const packet_length_varint = bscore_network_varint_encode(packet_identifier_varint_length
 								+ 16
 								+ username_length_length + username_length
 								+ properties_count_varint_length);
 							uint8_t packet_length_varint_length;
-							bullshitcore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
+							bscore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
 							SEND((uintptr_t)packet_length_varint, packet_length_varint_length,
 								(uintptr_t)packet_identifier_varint, packet_identifier_varint_length,
 								(uintptr_t)(buffer + buffer_offset), 16,
 								(uintptr_t)(buffer + buffer_offset - username_length_length - username_length), username_length_length + username_length,
 								(uintptr_t)properties_count_varint, properties_count_varint_length)
-							bullshitcore_memory_pool_leave(packet_identifier_varint, packet_identifier_varint_length);
-							bullshitcore_memory_pool_leave(properties_count_varint, properties_count_varint_length);
-							bullshitcore_memory_pool_leave(packet_length_varint, packet_length_varint_length);
+							free(packet_identifier_varint);
+							free(properties_count_varint);
+							free(packet_length_varint);
 							break;
 						}
 						case Packet_Login_Client_Encryption_Response:
@@ -217,22 +214,22 @@ packet_receiver(void *thread_arguments)
 						case Packet_Login_Client_Login_Acknowledged:
 						{
 							*connection_state = Connection_State_Configuration;
-							VarInt * const packet_identifier_varint = bullshitcore_network_varint_encode(Packet_Configuration_Server_Known_Packs);
+							VarInt * const packet_identifier_varint = bscore_network_varint_encode(Packet_Configuration_Server_Known_Packs);
 							uint8_t packet_identifier_varint_length;
-							bullshitcore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
-							VarInt * const known_packs_count_varint = bullshitcore_network_varint_encode(1);
+							bscore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
+							VarInt * const known_packs_count_varint = bscore_network_varint_encode(1);
 							uint8_t known_packs_count_varint_length;
-							bullshitcore_network_varint_decode(known_packs_count_varint, &known_packs_count_varint_length);
-							const String namespace = { bullshitcore_network_varint_encode(strlen("minecraft")), (const uint8_t *)"minecraft" };
-							const String identifier = { bullshitcore_network_varint_encode(strlen("core")), (const uint8_t *)"core" };
-							const String version = { bullshitcore_network_varint_encode(strlen(MINECRAFT_VERSION)), (const uint8_t *)MINECRAFT_VERSION };
+							bscore_network_varint_decode(known_packs_count_varint, &known_packs_count_varint_length);
+							const String namespace = { bscore_network_varint_encode(strlen("minecraft")), (const uint8_t *)"minecraft" };
+							const String identifier = { bscore_network_varint_encode(strlen("core")), (const uint8_t *)"core" };
+							const String version = { bscore_network_varint_encode(strlen(MINECRAFT_VERSION)), (const uint8_t *)MINECRAFT_VERSION };
 							uint8_t namespace_length_varint_length;
-							bullshitcore_network_varint_decode(namespace.length, &namespace_length_varint_length);
+							bscore_network_varint_decode(namespace.length, &namespace_length_varint_length);
 							uint8_t identifier_length_varint_length;
-							bullshitcore_network_varint_decode(identifier.length, &identifier_length_varint_length);
+							bscore_network_varint_decode(identifier.length, &identifier_length_varint_length);
 							uint8_t version_length_varint_length;
-							bullshitcore_network_varint_decode(version.length, &version_length_varint_length);
-							VarInt * const packet_length_varint = bullshitcore_network_varint_encode(packet_identifier_varint_length
+							bscore_network_varint_decode(version.length, &version_length_varint_length);
+							VarInt * const packet_length_varint = bscore_network_varint_encode(packet_identifier_varint_length
 								+ known_packs_count_varint_length
 								+ namespace_length_varint_length
 								+ strlen((const char *)namespace.contents)
@@ -241,7 +238,7 @@ packet_receiver(void *thread_arguments)
 								+ version_length_varint_length
 								+ strlen((const char *)version.contents));
 							uint8_t packet_length_varint_length;
-							bullshitcore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
+							bscore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
 							SEND((uintptr_t)packet_length_varint, packet_length_varint_length,
 								(uintptr_t)packet_identifier_varint, packet_identifier_varint_length,
 								(uintptr_t)known_packs_count_varint, known_packs_count_varint_length,
@@ -251,12 +248,12 @@ packet_receiver(void *thread_arguments)
 								(uintptr_t)identifier.contents, strlen((const char *)identifier.contents),
 								(uintptr_t)version.length, version_length_varint_length,
 								(uintptr_t)version.contents, strlen((const char *)version.contents))
-							bullshitcore_memory_pool_leave(packet_identifier_varint, packet_identifier_varint_length);
-							bullshitcore_memory_pool_leave(known_packs_count_varint, known_packs_count_varint_length);
-							bullshitcore_memory_pool_leave(namespace.length, namespace_length_varint_length);
-							bullshitcore_memory_pool_leave(identifier.length, identifier_length_varint_length);
-							bullshitcore_memory_pool_leave(version.length, version_length_varint_length);
-							bullshitcore_memory_pool_leave(packet_length_varint, packet_length_varint_length);
+							free(packet_identifier_varint);
+							free(known_packs_count_varint);
+							free(namespace.length);
+							free(identifier.length);
+							free(version.length);
+							free(packet_length_varint);
 							break;
 						}
 						case Packet_Login_Client_Cookie_Response:
@@ -278,19 +275,19 @@ packet_receiver(void *thread_arguments)
 						{
 gather_client_information:
 							// TODO: locale_length is incorrect.
-							// const uint32_t locale_length = bullshitcore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary);
+							// const uint32_t locale_length = bscore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary);
 							// buffer_offset += packet_next_boundary;
 							// memcpy(player_information.locale, buffer + buffer_offset, locale_length > NUMOF(player_information.locale) ? NUMOF(player_information.locale) : locale_length);
 							// buffer_offset += locale_length;
 							// player_information.render_distance = buffer[buffer_offset];
 							// ++buffer_offset;
-							// player_information.online_interaction = bullshitcore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary) << 5;
+							// player_information.online_interaction = bscore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary) << 5;
 							// buffer_offset += packet_next_boundary;
 							// player_information.online_interaction |= (buffer[buffer_offset] & 1) << 4;
 							// ++buffer_offset;
 							// player_information.appearance = buffer[buffer_offset] << 1;
 							// ++buffer_offset;
-							// player_information.appearance |= bullshitcore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary) & 1;
+							// player_information.appearance |= bscore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary) & 1;
 							// buffer_offset += packet_next_boundary;
 							// player_information.online_interaction |= (buffer[buffer_offset] & 1) << 3;
 							// ++buffer_offset;
@@ -310,48 +307,48 @@ gather_client_information:
 						case Packet_Configuration_Client_Finish_Configuration_Acknowledge:
 						{
 							*connection_state = Connection_State_Play;
-							VarInt *packet_identifier_varint = bullshitcore_network_varint_encode(Packet_Play_Server_Login);
+							VarInt *packet_identifier_varint = bscore_network_varint_encode(Packet_Play_Server_Login);
 							uint8_t packet_identifier_varint_length;
-							bullshitcore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
+							bscore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
 							const uint8_t * const overworld = (const uint8_t *)"minecraft:overworld";
 							const uint8_t * const nether = (const uint8_t *)"minecraft:the_nether";
 							const uint8_t * const end = (const uint8_t *)"minecraft:the_end";
 							const Identifier dimensions[] =
 							{
 								{
-									bullshitcore_network_varint_encode(strlen((const char *)overworld)),
+									bscore_network_varint_encode(strlen((const char *)overworld)),
 									overworld
 								},
 								{
-									bullshitcore_network_varint_encode(strlen((const char *)nether)),
+									bscore_network_varint_encode(strlen((const char *)nether)),
 									nether
 								},
 								{
-									bullshitcore_network_varint_encode(strlen((const char *)end)),
+									bscore_network_varint_encode(strlen((const char *)end)),
 									end
 								}
 							};
-							VarInt * const dimension_count_varint = bullshitcore_network_varint_encode(NUMOF(dimensions));
+							VarInt * const dimension_count_varint = bscore_network_varint_encode(NUMOF(dimensions));
 							uint8_t dimension_count_varint_length;
-							bullshitcore_network_varint_decode(dimension_count_varint, &dimension_count_varint_length);
+							bscore_network_varint_decode(dimension_count_varint, &dimension_count_varint_length);
 							uint8_t dimension_1_length_length;
-							bullshitcore_network_varint_decode(dimensions[0].length, &dimension_1_length_length);
+							bscore_network_varint_decode(dimensions[0].length, &dimension_1_length_length);
 							uint8_t dimension_2_length_length;
-							bullshitcore_network_varint_decode(dimensions[1].length, &dimension_2_length_length);
+							bscore_network_varint_decode(dimensions[1].length, &dimension_2_length_length);
 							uint8_t dimension_3_length_length;
-							bullshitcore_network_varint_decode(dimensions[2].length, &dimension_3_length_length);
-							VarInt * const max_players_varint = bullshitcore_network_varint_encode(MAX_PLAYERS);
+							bscore_network_varint_decode(dimensions[2].length, &dimension_3_length_length);
+							VarInt * const max_players_varint = bscore_network_varint_encode(MAX_PLAYERS);
 							uint8_t max_players_varint_length;
-							bullshitcore_network_varint_decode(max_players_varint, &max_players_varint_length);
-							VarInt * const render_distance_varint = bullshitcore_network_varint_encode(RENDER_DISTANCE);
+							bscore_network_varint_decode(max_players_varint, &max_players_varint_length);
+							VarInt * const render_distance_varint = bscore_network_varint_encode(RENDER_DISTANCE);
 							uint8_t render_distance_varint_length;
-							bullshitcore_network_varint_decode(render_distance_varint, &render_distance_varint_length);
-							VarInt * const simulation_distance_varint = bullshitcore_network_varint_encode(ACTUAL_SIMULATION_DISTANCE);
+							bscore_network_varint_decode(render_distance_varint, &render_distance_varint_length);
+							VarInt * const simulation_distance_varint = bscore_network_varint_encode(ACTUAL_SIMULATION_DISTANCE);
 							uint8_t simulation_distance_varint_length;
-							bullshitcore_network_varint_decode(simulation_distance_varint, &simulation_distance_varint_length);
-							VarInt * const dimension_type_varint = bullshitcore_network_varint_encode(0);
+							bscore_network_varint_decode(simulation_distance_varint, &simulation_distance_varint_length);
+							VarInt * const dimension_type_varint = bscore_network_varint_encode(0);
 							uint8_t dimension_type_varint_length;
-							bullshitcore_network_varint_decode(dimension_type_varint, &dimension_type_varint_length);
+							bscore_network_varint_decode(dimension_type_varint, &dimension_type_varint_length);
 							int64_t seed_hash = 0;
 							ret = wc_Sha256Hash((const byte *)&seed_hash, sizeof seed_hash, (byte *)&seed_hash);
 							if (unlikely(ret))
@@ -359,22 +356,22 @@ gather_client_information:
 								fprintf(stderr, "wc_Sha256Hash: %s\n", wc_GetErrorString(ret));
 								goto clear_stack_receiver;
 							}
-							VarInt * const portal_cooldown_varint = bullshitcore_network_varint_encode(0);
+							VarInt * const portal_cooldown_varint = bscore_network_varint_encode(0);
 							uint8_t portal_cooldown_varint_length;
-							bullshitcore_network_varint_decode(portal_cooldown_varint, &portal_cooldown_varint_length);
-							VarInt * const sea_level_varint = bullshitcore_network_varint_encode(63);
+							bscore_network_varint_decode(portal_cooldown_varint, &portal_cooldown_varint_length);
+							VarInt * const sea_level_varint = bscore_network_varint_encode(63);
 							uint8_t sea_level_varint_length;
-							bullshitcore_network_varint_decode(sea_level_varint, &sea_level_varint_length);
-							VarInt *packet_length_varint = bullshitcore_network_varint_encode(packet_identifier_varint_length
+							bscore_network_varint_decode(sea_level_varint, &sea_level_varint_length);
+							VarInt *packet_length_varint = bscore_network_varint_encode(packet_identifier_varint_length
 								+ sizeof(int32_t)
 								+ sizeof(Boolean)
 								+ dimension_count_varint_length
 								+ dimension_1_length_length
-								+ bullshitcore_network_varint_decode(dimensions[0].length, NULL)
+								+ bscore_network_varint_decode(dimensions[0].length, NULL)
 								+ dimension_2_length_length
-								+ bullshitcore_network_varint_decode(dimensions[1].length, NULL)
+								+ bscore_network_varint_decode(dimensions[1].length, NULL)
 								+ dimension_3_length_length
-								+ bullshitcore_network_varint_decode(dimensions[2].length, NULL)
+								+ bscore_network_varint_decode(dimensions[2].length, NULL)
 								+ max_players_varint_length
 								+ render_distance_varint_length
 								+ simulation_distance_varint_length
@@ -383,7 +380,7 @@ gather_client_information:
 								+ sizeof(Boolean)
 								+ dimension_type_varint_length
 								+ dimension_1_length_length
-								+ bullshitcore_network_varint_decode(dimensions[0].length, NULL)
+								+ bscore_network_varint_decode(dimensions[0].length, NULL)
 								+ sizeof seed_hash
 								+ sizeof(uint8_t)
 								+ sizeof(int8_t)
@@ -394,42 +391,42 @@ gather_client_information:
 								+ sea_level_varint_length
 								+ sizeof(Boolean));
 							uint8_t packet_length_varint_length;
-							bullshitcore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
-							VarInt * const packet_2_identifier_varint = bullshitcore_network_varint_encode(Packet_Play_Server_Game_Event);
+							bscore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
+							VarInt * const packet_2_identifier_varint = bscore_network_varint_encode(Packet_Play_Server_Game_Event);
 							uint8_t packet_2_identifier_varint_length;
-							bullshitcore_network_varint_decode(packet_2_identifier_varint, &packet_2_identifier_varint_length);
-							VarInt * const packet_2_length_varint = bullshitcore_network_varint_encode(packet_2_identifier_varint_length
+							bscore_network_varint_decode(packet_2_identifier_varint, &packet_2_identifier_varint_length);
+							VarInt * const packet_2_length_varint = bscore_network_varint_encode(packet_2_identifier_varint_length
 								+ sizeof(uint8_t)
 								+ (sizeof(float) >= 4 ? 4 : sizeof(float)));
 							uint8_t packet_2_length_varint_length;
-							bullshitcore_network_varint_decode(packet_2_length_varint, &packet_2_length_varint_length);
-							VarInt * const packet_3_identifier_varint = bullshitcore_network_varint_encode(Packet_Play_Server_Plugin_Message);
+							bscore_network_varint_decode(packet_2_length_varint, &packet_2_length_varint_length);
+							VarInt * const packet_3_identifier_varint = bscore_network_varint_encode(Packet_Play_Server_Plugin_Message);
 							uint8_t packet_3_identifier_varint_length;
-							bullshitcore_network_varint_decode(packet_3_identifier_varint, &packet_3_identifier_varint_length);
-							const Identifier channel_identifier = { bullshitcore_network_varint_encode(strlen("minecraft:brand")), (const uint8_t *)"minecraft:brand" };
+							bscore_network_varint_decode(packet_3_identifier_varint, &packet_3_identifier_varint_length);
+							const Identifier channel_identifier = { bscore_network_varint_encode(strlen("minecraft:brand")), (const uint8_t *)"minecraft:brand" };
 							uint8_t channel_identifier_length_varint_length;
-							bullshitcore_network_varint_decode(channel_identifier.length, &channel_identifier_length_varint_length);
-							const String server_brand = { bullshitcore_network_varint_encode(strlen(SERVER_BRAND)), (const uint8_t *)SERVER_BRAND };
+							bscore_network_varint_decode(channel_identifier.length, &channel_identifier_length_varint_length);
+							const String server_brand = { bscore_network_varint_encode(strlen(SERVER_BRAND)), (const uint8_t *)SERVER_BRAND };
 							uint8_t server_brand_length_varint_length;
-							bullshitcore_network_varint_decode(server_brand.length, &server_brand_length_varint_length);
-							VarInt * const packet_3_length_varint = bullshitcore_network_varint_encode(packet_3_identifier_varint_length
+							bscore_network_varint_decode(server_brand.length, &server_brand_length_varint_length);
+							VarInt * const packet_3_length_varint = bscore_network_varint_encode(packet_3_identifier_varint_length
 								+ channel_identifier_length_varint_length
-								+ bullshitcore_network_varint_decode(channel_identifier.length, NULL)
+								+ bscore_network_varint_decode(channel_identifier.length, NULL)
 								+ server_brand_length_varint_length
-								+ bullshitcore_network_varint_decode(server_brand.length, NULL));
+								+ bscore_network_varint_decode(server_brand.length, NULL));
 							uint8_t packet_3_length_varint_length;
-							bullshitcore_network_varint_decode(packet_3_length_varint, &packet_3_length_varint_length);
+							bscore_network_varint_decode(packet_3_length_varint, &packet_3_length_varint_length);
 							SEND((uintptr_t)packet_length_varint, packet_length_varint_length,
 								(uintptr_t)packet_identifier_varint, packet_identifier_varint_length,
 								(uintptr_t)&COMPOUND_LITERAL_WITH_SIZE(const int32_t, 0),
 								(uintptr_t)&COMPOUND_LITERAL_WITH_SIZE(const Boolean, false),
 								(uintptr_t)dimension_count_varint, dimension_count_varint_length,
 								(uintptr_t)dimensions[0].length, dimension_1_length_length,
-								(uintptr_t)dimensions[0].contents, bullshitcore_network_varint_decode(dimensions[0].length, NULL),
+								(uintptr_t)dimensions[0].contents, bscore_network_varint_decode(dimensions[0].length, NULL),
 								(uintptr_t)dimensions[1].length, dimension_2_length_length,
-								(uintptr_t)dimensions[1].contents, bullshitcore_network_varint_decode(dimensions[1].length, NULL),
+								(uintptr_t)dimensions[1].contents, bscore_network_varint_decode(dimensions[1].length, NULL),
 								(uintptr_t)dimensions[2].length, dimension_3_length_length,
-								(uintptr_t)dimensions[2].contents, bullshitcore_network_varint_decode(dimensions[2].length, NULL),
+								(uintptr_t)dimensions[2].contents, bscore_network_varint_decode(dimensions[2].length, NULL),
 								(uintptr_t)max_players_varint, max_players_varint_length,
 								(uintptr_t)render_distance_varint, render_distance_varint_length,
 								(uintptr_t)simulation_distance_varint, simulation_distance_varint_length,
@@ -438,7 +435,7 @@ gather_client_information:
 								(uintptr_t)&COMPOUND_LITERAL_WITH_SIZE(const Boolean, false),
 								(uintptr_t)dimension_type_varint, dimension_type_varint_length,
 								(uintptr_t)dimensions[0].length, dimension_1_length_length,
-								(uintptr_t)dimensions[0].contents, bullshitcore_network_varint_decode(dimensions[0].length, NULL),
+								(uintptr_t)dimensions[0].contents, bscore_network_varint_decode(dimensions[0].length, NULL),
 								(uintptr_t)&seed_hash, sizeof seed_hash,
 								(uintptr_t)&COMPOUND_LITERAL_WITH_SIZE(const uint8_t, 3),
 								(uintptr_t)&COMPOUND_LITERAL_WITH_SIZE(const int8_t, -1),
@@ -455,27 +452,27 @@ gather_client_information:
 								(uintptr_t)packet_3_length_varint, packet_3_length_varint_length,
 								(uintptr_t)packet_3_identifier_varint, packet_3_identifier_varint_length,
 								(uintptr_t)channel_identifier.length, channel_identifier_length_varint_length,
-								(uintptr_t)channel_identifier.contents, bullshitcore_network_varint_decode(channel_identifier.length, NULL),
+								(uintptr_t)channel_identifier.contents, bscore_network_varint_decode(channel_identifier.length, NULL),
 								(uintptr_t)server_brand.length, server_brand_length_varint_length,
-								(uintptr_t)server_brand.contents, bullshitcore_network_varint_decode(server_brand.length, NULL))
-							bullshitcore_memory_pool_leave(packet_identifier_varint, packet_identifier_varint_length);
-							bullshitcore_memory_pool_leave(dimension_count_varint, dimension_count_varint_length);
-							bullshitcore_memory_pool_leave(dimensions[0].length, dimension_1_length_length);
-							bullshitcore_memory_pool_leave(dimensions[1].length, dimension_2_length_length);
-							bullshitcore_memory_pool_leave(dimensions[2].length, dimension_3_length_length);
-							bullshitcore_memory_pool_leave(max_players_varint, max_players_varint_length);
-							bullshitcore_memory_pool_leave(render_distance_varint, render_distance_varint_length);
-							bullshitcore_memory_pool_leave(simulation_distance_varint, simulation_distance_varint_length);
-							bullshitcore_memory_pool_leave(dimension_type_varint, dimension_type_varint_length);
-							bullshitcore_memory_pool_leave(portal_cooldown_varint, portal_cooldown_varint_length);
-							bullshitcore_memory_pool_leave(sea_level_varint, sea_level_varint_length);
-							bullshitcore_memory_pool_leave(packet_length_varint, packet_length_varint_length);
-							bullshitcore_memory_pool_leave(packet_2_identifier_varint, packet_2_identifier_varint_length);
-							bullshitcore_memory_pool_leave(packet_2_length_varint, packet_2_length_varint_length);
-							bullshitcore_memory_pool_leave(packet_3_identifier_varint, packet_3_identifier_varint_length);
-							bullshitcore_memory_pool_leave(channel_identifier.length, channel_identifier_length_varint_length);
-							bullshitcore_memory_pool_leave(server_brand.length, server_brand_length_varint_length);
-							bullshitcore_memory_pool_leave(packet_3_length_varint, packet_3_length_varint_length);
+								(uintptr_t)server_brand.contents, bscore_network_varint_decode(server_brand.length, NULL))
+							free(packet_identifier_varint);
+							free(dimension_count_varint);
+							free(dimensions[0].length);
+							free(dimensions[1].length);
+							free(dimensions[2].length);
+							free(max_players_varint);
+							free(render_distance_varint);
+							free(simulation_distance_varint);
+							free(dimension_type_varint);
+							free(portal_cooldown_varint);
+							free(sea_level_varint);
+							free(packet_length_varint);
+							free(packet_2_identifier_varint);
+							free(packet_2_length_varint);
+							free(packet_3_identifier_varint);
+							free(channel_identifier.length);
+							free(server_brand.length);
+							free(packet_3_length_varint);
 							break;
 						}
 						case Packet_Configuration_Client_Keep_Alive:
@@ -492,14 +489,14 @@ gather_client_information:
 						}
 						case Packet_Configuration_Client_Known_Packs:
 						{
-							const uint32_t client_known_packs = bullshitcore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary);
+							const uint32_t client_known_packs = bscore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary);
 							buffer_offset += packet_next_boundary;
-							VarInt * const packet_identifier_varint = bullshitcore_network_varint_encode(Packet_Configuration_Server_Finish_Configuration);
+							VarInt * const packet_identifier_varint = bscore_network_varint_encode(Packet_Configuration_Server_Finish_Configuration);
 							uint8_t packet_identifier_varint_length;
-							bullshitcore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
-							VarInt * const packet_length_varint = bullshitcore_network_varint_encode(packet_identifier_varint_length);
+							bscore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
+							VarInt * const packet_length_varint = bscore_network_varint_encode(packet_identifier_varint_length);
 							uint8_t packet_length_varint_length;
-							bullshitcore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
+							bscore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
 							SEND((uintptr_t)REGISTRY_1, sizeof REGISTRY_1,
 								(uintptr_t)REGISTRY_2, sizeof REGISTRY_2,
 								(uintptr_t)REGISTRY_3, sizeof REGISTRY_3,
@@ -514,8 +511,8 @@ gather_client_information:
 								(uintptr_t)REGISTRY_12, sizeof REGISTRY_12,
 								(uintptr_t)packet_length_varint, packet_length_varint_length,
 								(uintptr_t)packet_identifier_varint, packet_identifier_varint_length)
-							bullshitcore_memory_pool_leave(packet_identifier_varint, packet_identifier_varint_length);
-							bullshitcore_memory_pool_leave(packet_length_varint, packet_length_varint_length);
+							free(packet_identifier_varint);
+							free(packet_length_varint);
 							break;
 						}
 					}
@@ -661,17 +658,17 @@ gather_client_information:
 						}
 						case Packet_Play_Client_Ping_Request:
 						{
-							VarInt * const packet_identifier_varint = bullshitcore_network_varint_encode(Packet_Play_Server_Ping_Response);
+							VarInt * const packet_identifier_varint = bscore_network_varint_encode(Packet_Play_Server_Ping_Response);
 							uint8_t packet_identifier_varint_length;
-							bullshitcore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
-							VarInt * const packet_length_varint = bullshitcore_network_varint_encode(packet_identifier_varint_length + 8);
+							bscore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
+							VarInt * const packet_length_varint = bscore_network_varint_encode(packet_identifier_varint_length + 8);
 							uint8_t packet_length_varint_length;
-							bullshitcore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
+							bscore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
 							SEND((uintptr_t)packet_length_varint, packet_length_varint_length,
 								(uintptr_t)packet_identifier_varint, packet_identifier_varint_length,
 								(uintptr_t)buffer, 8)
-							bullshitcore_memory_pool_leave(packet_identifier_varint, packet_identifier_varint_length);
-							bullshitcore_memory_pool_leave(packet_length_varint, packet_length_varint_length);
+							free(packet_identifier_varint);
+							free(packet_length_varint);
 							break;
 						}
 						case Packet_Play_Client_Place_Recipe:
@@ -775,7 +772,7 @@ gather_client_information:
 				}
 			}
 #ifndef NDEBUG
-			bullshitcore_log_error("Reached an end of the packet jump table.");
+			bscore_log_error("Reached an end of the packet jump table.");
 #endif
 		}
 close_connection:
@@ -791,9 +788,9 @@ clear_stack_receiver:;
 	// TODO: Also pass failed function name.
 	const int errno_copy = errno;
 #ifndef NDEBUG
-	bullshitcore_log_error_formatted("Receiver thread crashed! %s\n", strerror(errno_copy));
+	bscore_log_error_formatted("Receiver thread crashed! %s\n", strerror(errno_copy));
 #endif
-	int * const p_errno_copy = bullshitcore_memory_pool_retrieve(sizeof errno_copy);
+	int * const p_errno_copy = malloc(sizeof errno_copy);
 	if (unlikely(!p_errno_copy)) return (void *)1;
 	*p_errno_copy = errno_copy;
 	return p_errno_copy;
@@ -837,13 +834,13 @@ packet_sender(void *thread_arguments)
 				int32_t packet_identifier = *connection_state == Connection_State_Configuration
 					? Packet_Configuration_Server_Keep_Alive
 					: Packet_Play_Server_Keep_Alive;
-				VarInt * const packet_identifier_varint = bullshitcore_network_varint_encode(packet_identifier);
+				VarInt * const packet_identifier_varint = bscore_network_varint_encode(packet_identifier);
 				uint8_t packet_identifier_varint_length;
-				bullshitcore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
-				VarInt * const packet_length_varint = bullshitcore_network_varint_encode(packet_identifier_varint_length
+				bscore_network_varint_decode(packet_identifier_varint, &packet_identifier_varint_length);
+				VarInt * const packet_length_varint = bscore_network_varint_encode(packet_identifier_varint_length
 					+ sizeof(int64_t));
 				uint8_t packet_length_varint_length;
-				bullshitcore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
+				bscore_network_varint_decode(packet_length_varint, &packet_length_varint_length);
 				memcpy(interthread_buffer, packet_length_varint, packet_length_varint_length);
 				size_t interthread_buffer_offset = packet_length_varint_length;
 				memcpy(interthread_buffer + interthread_buffer_offset, packet_identifier_varint, packet_identifier_varint_length);
@@ -871,9 +868,9 @@ skip_send:
 clear_stack_sender:;
 	const int errno_copy = errno;
 #ifndef NDEBUG
-	bullshitcore_log_error_formatted("Sender thread crashed! %s\n", strerror(errno_copy));
+	bscore_log_error_formatted("Sender thread crashed! %s\n", strerror(errno_copy));
 #endif
-	int * const p_errno_copy = bullshitcore_memory_pool_retrieve(sizeof errno_copy);
+	int * const p_errno_copy = malloc(sizeof errno_copy);
 	if (unlikely(!p_errno_copy)) return (void *)1;
 	*p_errno_copy = errno_copy;
 	return p_errno_copy;
@@ -931,7 +928,7 @@ main(void)
 		}
 		if (unlikely(listen(server_endpoint, SOMAXCONN) == -1))
 			PERROR_AND_GOTO_DESTROY("listen", server_endpoint)
-		bullshitcore_log_log("Initialisation is complete, awaiting new connections.");
+		bscore_log_log("Initialisation is complete, awaiting new connections.");
 		{
 			int client_endpoint;
 			struct sockaddr_storage client_address_data;
@@ -949,18 +946,18 @@ main(void)
 						char client_address_string[INET_ADDRSTRLEN];
 						if (unlikely(!inet_ntop(AF_INET, &client_address_data_in.sin_addr, client_address_string, sizeof client_address_string)))
 							PERROR_AND_GOTO_DESTROY("inet_ntop", server_endpoint)
-						bullshitcore_log_log_formatted("A client (%s) has connected.\n", client_address_string);
+						bscore_log_log_formatted("A client (%s) has connected.\n", client_address_string);
 					}
-					struct ThreadArguments *thread_arguments = bullshitcore_memory_pool_retrieve(sizeof *thread_arguments);
+					struct ThreadArguments *thread_arguments = malloc(sizeof *thread_arguments);
 					if (unlikely(!thread_arguments))
 						PERROR_AND_GOTO_DESTROY("malloc", client_endpoint)
-					uint8_t *interthread_buffer = bullshitcore_memory_pool_retrieve(sizeof *interthread_buffer * PACKET_MAXSIZE); // free me
+					uint8_t *interthread_buffer = malloc(sizeof *interthread_buffer * PACKET_MAXSIZE); // free me
 					if (unlikely(!interthread_buffer))
 						PERROR_AND_GOTO_DESTROY("malloc", client_endpoint)
-					size_t *interthread_buffer_length = bullshitcore_memory_pool_retrieve(sizeof *interthread_buffer_length); // free me
+					size_t *interthread_buffer_length = malloc(sizeof *interthread_buffer_length); // free me
 					if (unlikely(!interthread_buffer_length))
 						PERROR_AND_GOTO_DESTROY("malloc", client_endpoint)
-					pthread_mutex_t *interthread_buffer_mutex = bullshitcore_memory_pool_retrieve(sizeof *interthread_buffer_mutex); // free me
+					pthread_mutex_t *interthread_buffer_mutex = malloc(sizeof *interthread_buffer_mutex); // free me
 					if (unlikely(!interthread_buffer_mutex))
 						PERROR_AND_GOTO_DESTROY("malloc", client_endpoint)
 					ret = pthread_mutex_init(interthread_buffer_mutex, NULL);
@@ -969,7 +966,7 @@ main(void)
 						errno = ret;
 						PERROR_AND_GOTO_DESTROY("pthread_mutex_init", client_endpoint)
 					}
-					pthread_cond_t *interthread_buffer_condition = bullshitcore_memory_pool_retrieve(sizeof *interthread_buffer_condition); // free me
+					pthread_cond_t *interthread_buffer_condition = malloc(sizeof *interthread_buffer_condition); // free me
 					if (unlikely(!interthread_buffer_condition))
 						PERROR_AND_GOTO_DESTROY("malloc", client_endpoint)
 					ret = pthread_cond_init(interthread_buffer_condition, NULL);
@@ -978,12 +975,12 @@ main(void)
 						errno = ret;
 						PERROR_AND_GOTO_DESTROY("pthread_cond_init", client_endpoint)
 					}
-					sem_t *client_thread_arguments_semaphore = bullshitcore_memory_pool_retrieve(sizeof *client_thread_arguments_semaphore);
+					sem_t *client_thread_arguments_semaphore = malloc(sizeof *client_thread_arguments_semaphore);
 					if (unlikely(!client_thread_arguments_semaphore))
 						PERROR_AND_GOTO_DESTROY("malloc", client_endpoint)
 					if (unlikely(sem_init(client_thread_arguments_semaphore, 0, 0) == -1))
 						PERROR_AND_GOTO_DESTROY("sem_init", client_endpoint)
-					enum Connection_State *connection_state = bullshitcore_memory_pool_retrieve(sizeof *connection_state); // free me
+					enum Connection_State *connection_state = malloc(sizeof *connection_state); // free me
 					if (unlikely(!connection_state))
 						PERROR_AND_GOTO_DESTROY("malloc", client_endpoint)
 					*connection_state = Connection_State_Handshaking;
@@ -1018,8 +1015,8 @@ main(void)
 						PERROR_AND_GOTO_DESTROY("sem_wait", client_endpoint)
 					if (unlikely(sem_destroy(client_thread_arguments_semaphore) == -1))
 						PERROR_AND_GOTO_DESTROY("sem_destroy", client_endpoint)
-					bullshitcore_memory_pool_leave(client_thread_arguments_semaphore, sizeof *client_thread_arguments_semaphore);
-					bullshitcore_memory_pool_leave(thread_arguments, sizeof *thread_arguments);
+					free(client_thread_arguments_semaphore);
+					free(thread_arguments);
 				}
 			}
 			if (unlikely(close(client_endpoint) == -1))

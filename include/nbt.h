@@ -1,5 +1,5 @@
-#ifndef BULLSHITCORE_NBT
-#define BULLSHITCORE_NBT
+#ifndef BSCORE_NBT
+#define BSCORE_NBT
 
 #include <stdint.h>
 #include <stdio.h>
@@ -59,9 +59,5 @@ typedef struct
 	TAG_Long *contents;
 } TAG_Long_Array;
 typedef TAG_Compound NBT;
-
-NBT *bullshitcore_nbt_read(FILE * restrict file);
-void bullshitcore_nbt_free(NBT * restrict nbt);
-void *bullshitcore_nbt_search(const NBT * restrict nbt, const uint8_t * restrict query);
 
 #endif

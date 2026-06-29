@@ -2,15 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include "global-macros.h"
-#include "memory-pool.h"
 #include "network.h"
 
 VarInt *
-bullshitcore_network_varint_encode(int32_t value)
+bscore_network_varint_encode(int32_t value)
 {
 	uint_fast8_t bytes = 1;
 	while ((uint32_t)value >> 7 * bytes && bytes < 5) ++bytes;
-	VarInt *varint = bullshitcore_memory_pool_retrieve(bytes);
+	VarInt *varint = malloc(bytes);
 	if (unlikely(!varint)) return NULL;
 	memset(varint, 0, bytes);
 	for (size_t i = 0; i < bytes; ++i)
@@ -19,7 +18,7 @@ bullshitcore_network_varint_encode(int32_t value)
 }
 
 int32_t
-bullshitcore_network_varint_decode(const VarInt * restrict varint, uint8_t * restrict bytes)
+bscore_network_varint_decode(const VarInt * restrict varint, uint8_t * restrict bytes)
 {
 	int32_t value = 0;
 	size_t i = 0;
@@ -35,11 +34,11 @@ bullshitcore_network_varint_decode(const VarInt * restrict varint, uint8_t * res
 }
 
 VarLong *
-bullshitcore_network_varlong_encode(int64_t value)
+bscore_network_varlong_encode(int64_t value)
 {
 	uint_fast8_t bytes = 1;
 	while ((uint64_t)value >> 7 * bytes && bytes < 10) ++bytes;
-	VarLong *varlong = bullshitcore_memory_pool_retrieve(bytes);
+	VarLong *varlong = malloc(bytes);
 	if (unlikely(!varlong)) return NULL;
 	memset(varlong, 0, bytes);
 	for (size_t i = 0; i < bytes; ++i)
@@ -48,7 +47,7 @@ bullshitcore_network_varlong_encode(int64_t value)
 }
 
 int64_t
-bullshitcore_network_varlong_decode(const VarLong * restrict varlong, uint8_t * restrict bytes)
+bscore_network_varlong_decode(const VarLong * restrict varlong, uint8_t * restrict bytes)
 {
 	int64_t value = 0;
 	size_t i = 0;
@@ -64,9 +63,9 @@ bullshitcore_network_varlong_decode(const VarLong * restrict varlong, uint8_t * 
 }
 
 String
-bullshitcore_network_string_java_utf8_encode(UnicodeString codepoints)
+bscore_network_string_java_utf8_encode(UnicodeString codepoints)
 {
-	uint8_t *contents = bullshitcore_memory_pool_retrieve(STRING_MAXSIZE);
+	uint8_t *contents = malloc(STRING_MAXSIZE);
 	if (unlikely(!contents)) return (String){ 0 };
 	uint32_t codepoint;
 	size_t characters = 0;
@@ -106,5 +105,5 @@ low_surrogate:
 			goto encode_surrogate_pair;
 		}
 	}
-	return (String){ bullshitcore_network_varint_encode(characters), contents };
+	return (String){ bscore_network_varint_encode(characters), contents };
 }

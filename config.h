@@ -17,9 +17,6 @@
 #ifndef DESCRIPTION
 # define DESCRIPTION "A Minecraft Server"
 #endif
-// A toggle for enabling the reuse of the allocated memory. Use
-// MEMORY_POOL_SIZE to modify the size of the pool.
-//#define ENABLE_MEMORY_POOLING
 // A base64 data URI for a PNG image (alpha channel is supported) with
 // dimensions of 64 x 64 pixels to display as the icon of the server.
 #ifndef FAVICON
@@ -36,11 +33,6 @@
 #ifndef MAX_PLAYERS
 # define MAX_PLAYERS 20
 #endif
-// An integer in the range [1, 65535] (or larger) singnifying the size of the
-// memory pool used if pooling is enabled with ENABLE_MEMORY_POOLING.
-#ifndef MEMORY_POOL_SIZE
-# define MEMORY_POOL_SIZE 256
-#endif
 // An integer in the range [0, 65535] signifying the port to listen on.
 #ifndef PORT
 # define PORT 25565
@@ -52,7 +44,7 @@
 #endif
 // A brand of the server to show in the crash logs and on the debug screen.
 #ifndef SERVER_BRAND
-# define SERVER_BRAND "BullshitCore"
+# define SERVER_BRAND "BSCore"
 #endif
 // An integer in the range [5, 32] signifying the radius in chunks (16 by 16
 // blocks areas) for entities to get simulated around a player.

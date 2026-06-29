@@ -1,5 +1,5 @@
-#ifndef BULLSHITCORE_NETWORK
-#define BULLSHITCORE_NETWORK
+#ifndef BSCORE_NETWORK
+#define BSCORE_NETWORK
 
 #include <stddef.h>
 #include <stdint.h>
@@ -340,10 +340,10 @@ typedef struct
 	uint8_t online_interaction;
 } PlayerInformation;
 
-VarInt *bullshitcore_network_varint_encode(int32_t value);
-int32_t bullshitcore_network_varint_decode(const VarInt * restrict varint, uint8_t * restrict bytes);
-VarLong *bullshitcore_network_varlong_encode(int64_t value);
-int64_t bullshitcore_network_varlong_decode(const VarLong * restrict varlong, uint8_t * restrict bytes);
-String bullshitcore_network_string_java_utf8_encode(UnicodeString codepoints);
+VarInt *bscore_network_varint_encode(int32_t value);
+int32_t bscore_network_varint_decode(const VarInt * restrict varint, uint8_t * restrict bytes);
+VarLong *bscore_network_varlong_encode(int64_t value);
+int64_t bscore_network_varlong_decode(const VarLong * restrict varlong, uint8_t * restrict bytes);
+String bscore_network_string_java_utf8_encode(UnicodeString codepoints);
 
 #endif

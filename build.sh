@@ -3,9 +3,9 @@
 (set -u
 cd "$(dirname "$0")/source" || exit 1
 . ../version || { printf "Version formatted wrong\n" >&2; exit 1; }
-app="../BullshitCore-$MINECRAFT_VERSION-$VERSION" ||
+app="../BSCore-$MINECRAFT_VERSION-$VERSION" ||
 { printf "Version formatted wrong\n" >&2; exit 1; }
-lib="../libbullshitcore-$MINECRAFT_VERSION-$VERSION"
+lib="../libbscore-$MINECRAFT_VERSION-$VERSION"
 set +u
 case $1 in
 	debug)
@@ -27,7 +27,7 @@ case $1 in
 			printf %s:\\n "$module"
 			for test in $(awk '/ifdef/ { print $NF }' "$module"); do
 				printf %s:\  "$test"
-				timeout 5 tcc "-run -D$test -I../include -L.. -lbullshitcore-$MINECRAFT_VERSION-$VERSION" \
+				timeout 5 tcc "-run -D$test -I../include -L.. -lbscore-$MINECRAFT_VERSION-$VERSION" \
 				"$module"
 				case $? in
 					124) printf "Timed out.\n";;

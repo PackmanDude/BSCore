@@ -4,13 +4,13 @@
 // TODO: Perform logging in a separate thread.
 
 void
-bullshitcore_log_log(const char * restrict string)
+bscore_log_log(const char * restrict string)
 {
 	puts(string);
 }
 
 void
-bullshitcore_log_log_formatted(const char * restrict format, ...)
+bscore_log_log_formatted(const char * restrict format, ...)
 {
 	va_list arguments;
 	va_start(arguments, format);
@@ -19,19 +19,19 @@ bullshitcore_log_log_formatted(const char * restrict format, ...)
 }
 
 void
-bullshitcore_log_variadic_log_formatted(const char * restrict format, va_list arguments)
+bscore_log_variadic_log_formatted(const char * restrict format, va_list arguments)
 {
 	vprintf(format, arguments);
 }
 
 void
-bullshitcore_log_error(const char * restrict string)
+bscore_log_error(const char * restrict string)
 {
 	fprintf(stderr, "%s\n", string);
 }
 
 void
-bullshitcore_log_error_formatted(const char * restrict format, ...)
+bscore_log_error_formatted(const char * restrict format, ...)
 {
 	va_list arguments;
 	va_start(arguments, format);
@@ -40,7 +40,7 @@ bullshitcore_log_error_formatted(const char * restrict format, ...)
 }
 
 void
-bullshitcore_log_variadic_error_formatted(const char * restrict format, va_list arguments)
+bscore_log_variadic_error_formatted(const char * restrict format, va_list arguments)
 {
 	vfprintf(stderr, format, arguments);
 }
