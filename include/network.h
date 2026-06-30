@@ -95,7 +95,7 @@ enum Packet_Configuration_Client
 	Packet_Configuration_Client_Plugin_Message,
 	Packet_Configuration_Client_Finish_Configuration_Acknowledge,
 	Packet_Configuration_Client_Keep_Alive,
-	Packet_Configuration_Client_Pong, // pog
+	Packet_Configuration_Client_Pong,
 	Packet_Configuration_Client_Resource_Pack_Response,
 	Packet_Configuration_Client_Known_Packs
 };

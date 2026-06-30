@@ -17,7 +17,7 @@
 #include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/hash.h>
 #include "config.h"
-#include "global-macros.h"
+#include "utilities.h"
 #include "log.h"
 #include "network.h"
 #include "registries.h"
@@ -274,26 +274,6 @@ packet_receiver(void *thread_arguments)
 						case Packet_Configuration_Client_Client_Information:
 						{
 gather_client_information:
-							// TODO: locale_length is incorrect.
-							// const uint32_t locale_length = bscore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary);
-							// buffer_offset += packet_next_boundary;
-							// memcpy(player_information.locale, buffer + buffer_offset, locale_length > NUMOF(player_information.locale) ? NUMOF(player_information.locale) : locale_length);
-							// buffer_offset += locale_length;
-							// player_information.render_distance = buffer[buffer_offset];
-							// ++buffer_offset;
-							// player_information.online_interaction = bscore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary) << 5;
-							// buffer_offset += packet_next_boundary;
-							// player_information.online_interaction |= (buffer[buffer_offset] & 1) << 4;
-							// ++buffer_offset;
-							// player_information.appearance = buffer[buffer_offset] << 1;
-							// ++buffer_offset;
-							// player_information.appearance |= bscore_network_varint_decode(buffer + buffer_offset, &packet_next_boundary) & 1;
-							// buffer_offset += packet_next_boundary;
-							// player_information.online_interaction |= (buffer[buffer_offset] & 1) << 3;
-							// ++buffer_offset;
-							// player_information.online_interaction |= (buffer[buffer_offset] & 1) << 2;
-							// ++buffer_offset;
-							// player_information.online_interaction |= buffer[buffer_offset] & 3;
 							break;
 						}
 						case Packet_Configuration_Client_Cookie_Response:

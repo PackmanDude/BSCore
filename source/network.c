@@ -1,7 +1,7 @@
 #define _XOPEN_SOURCE 500
 #include <stdlib.h>
 #include <string.h>
-#include "global-macros.h"
+#include "utilities.h"
 #include "network.h"
 
 VarInt *
@@ -98,7 +98,7 @@ encode_surrogate_pair:
 		}
 		else if (codepoint <= 0x10FFFFL)
 		{
-			codepoint = 0xD800U + (codepoint - 0x10000L << 10 & 0xFFC00L);
+			codepoint = 0xD800U + (((codepoint - 0x10000L) >> 10) & 0x3FF);
 			goto encode_surrogate_pair;
 low_surrogate:
 			codepoint = 0xDC00U + (codepoint - 0x10000L & 0x3FF);
