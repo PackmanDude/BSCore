@@ -2,9 +2,9 @@
 
 (set -u
 cd "$(dirname "$0")/source" || exit 1
-. ../version || { printf "Version formatted wrong\n" >&2; exit 1; }
+. ../version || { printf "Version formatting is wrong.\n" >&2; exit 1; }
 app="../BSCore-$MINECRAFT_VERSION-$VERSION" ||
-{ printf "Version formatted wrong\n" >&2; exit 1; }
+{ printf "Version formatting is wrong.\n" >&2; exit 1; }
 lib="../libbscore-$MINECRAFT_VERSION-$VERSION"
 set +u
 case $1 in
