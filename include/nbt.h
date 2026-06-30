@@ -2,7 +2,6 @@
 #define BSCORE_NBT
 
 #include <stdint.h>
-#include <stdio.h>
 
 enum TAGType
 {
