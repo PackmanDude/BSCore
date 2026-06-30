@@ -2,11 +2,11 @@
 
 ![Code size](https://img.shields.io/github/languages/code-size/PackmanDude/BSCore?style=flat-square)
 
-My own Minecraft server implementation.
+Simple Minecraft server implementation for learning POSIX sockets.
 
 ## Building
 
-Get a copy of the software:
+Get a copy of the source code:
 
 ```sh
 git clone --depth 1 --single-branch https://github.com/PackmanDude/BSCore.git
